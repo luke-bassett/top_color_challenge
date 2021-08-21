@@ -27,7 +27,7 @@ if __name__ == '__main__':
     t1 = time.perf_counter()
 
     urls = load_data()
-    print(process(scan_from_url, urls))
+    print(process(scan_from_url, urls, n_procs=1))
 
     t2 = time.perf_counter()
     print(f'finished in {t2 - t1} seconds')
