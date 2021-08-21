@@ -5,13 +5,12 @@ from find_top_colors import find_top_colors
 
 
 class ColorScanner():
-    def __init__(self, n=3):
+    def __init__(self, url, n=3):
+        self.url = url
         self.n = n
 
-    def load_image(self, url):
-        print(url)
-        self.image = Image.open(requests.get(url, stream=True).raw)
-        self.url = url
+    def load_image(self):
+        self.image = Image.open(requests.get(self.url, stream=True).raw)
 
     def get_top_colors(self):
         """return top n colors as a list of hexes"""
