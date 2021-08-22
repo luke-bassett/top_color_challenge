@@ -7,6 +7,7 @@ import time
 from PIL import Image
 import requests
 
+
 def load_urls(data_path='sample_data//input.txt'):
     with open(os.path.join(os.path.dirname(__file__), data_path), 'r') as f:
         urls = [line.strip() for line in f.readlines()]
@@ -52,8 +53,10 @@ class ColorScanner():
                 args=(url, img)
             )
             color_count_thread.start()  # continue on to loading next image
+
         color_count_thread.join()
-        self.write_results()
+        if len(self.results) > 0:
+            self.write_results()
 
     def get_top_colors(self, url, img):
         top_colors = find_top_colors(img)
