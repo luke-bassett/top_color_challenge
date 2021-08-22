@@ -98,7 +98,7 @@ class ColorScanner():
 if __name__ == '__main__':
     t1 = time.perf_counter()
     fname = datetime.now().strftime("results_%Y%m%d_%H%M%S.csv")
-    cs = ColorScanner(urls=load_urls()[:50], fname=fname)
+    cs = ColorScanner(urls=load_urls()[:10], fname=fname)
     cs.scan()
     t2 = time.perf_counter()
     print(f'{t2 - t1} seconds')
