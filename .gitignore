@@ -1,3 +1,4 @@
 color_scan_testing.py
 *__pycache__
 .vscode/
+results*.csv
