@@ -1,12 +1,11 @@
 import csv
 from datetime import datetime
 import os
-import requests
 import threading
 import time
 
 from PIL import Image
-
+import requests
 
 def load_urls(data_path='sample_data//input.txt'):
     with open(os.path.join(os.path.dirname(__file__), data_path), 'r') as f:
