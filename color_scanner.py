@@ -26,6 +26,9 @@ def rgb_to_hex(r, g, b):
     return r"#{:02X}{:02X}{:02X}".format(r, g, b)
 
 
+def load_i
+
+
 class ColorScanner():
     def __init__(self, urls, fname, limit=None, n_colors=3, write_freq=25):
         self.urls = urls
@@ -40,7 +43,7 @@ class ColorScanner():
         color_count_thread = None
         for url in self.urls:
 
-            img = self.load_image(url)
+            img = Image.open(requests.get(url, stream=True).raw)
 
             if color_count_thread is not None:
                 color_count_thread.join()
@@ -56,12 +59,9 @@ class ColorScanner():
         color_count_thread.join()
         self.write_results()
 
-    def load_image(self, url):
-        return Image.open(requests.get(url, stream=True).raw)
-
     def get_top_colors(self, url, img):
         top_colors = find_top_colors(img)
-        if top_colors:
+        if top_colors:  # image not removed
             self.results.append([url] + top_colors)
         else:
             self.results.append([url])
