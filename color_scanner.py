@@ -52,7 +52,7 @@ class ColorScanner():
                 target=self.get_top_colors,
                 args=(url, img)
             )
-            color_count_thread.start()
+            color_count_thread.start()  # continue on to loading next image
         color_count_thread.join()
         self.write_results()
 
