@@ -1,4 +1,5 @@
 import csv
+from datetime import datetime
 import os
 import requests
 import threading
@@ -9,7 +10,7 @@ from PIL import Image
 
 def load_urls(data_path='sample_data//input.txt'):
     with open(os.path.join(os.path.dirname(__file__), data_path), 'r') as f:
-        urls = [line.strip() for line in f.readlines()][:100]
+        urls = [line.strip() for line in f.readlines()]
     return urls
 
 
@@ -26,12 +27,14 @@ def rgb_to_hex(r, g, b):
 
 
 class ColorScanner():
-    def __init__(self, urls, fname, n_colors=3, write_freq=25):
+    def __init__(self, urls, fname, limit=None, n_colors=3, write_freq=25):
         self.urls = urls
         self.n_colors = n_colors
         self.results = []
         self.fname = fname
         self.write_freq = write_freq
+        if limit:
+            self.urls = self.urls[:limit]
 
     def scan(self):
         color_count_thread = None
@@ -72,8 +75,10 @@ class ColorScanner():
 
 if __name__ == '__main__':
     t1 = time.perf_counter()
+    t = datetime.now()
+    fname = t.strftime("results_%Y%m%d_%H%M%S.csv")
 
-    cs = ColorScanner(urls=load_urls(), fname='results.csv')
+    cs = ColorScanner(urls=load_urls(), fname=fname, limit=1000)
     cs.scan()
 
     t2 = time.perf_counter()
