@@ -26,9 +26,6 @@ def rgb_to_hex(r, g, b):
     return r"#{:02X}{:02X}{:02X}".format(r, g, b)
 
 
-def load_i
-
-
 class ColorScanner():
     def __init__(self, urls, fname, limit=None, n_colors=3, write_freq=25):
         self.urls = urls
@@ -78,7 +75,7 @@ if __name__ == '__main__':
     t = datetime.now()
     fname = t.strftime("results_%Y%m%d_%H%M%S.csv")
 
-    cs = ColorScanner(urls=load_urls(), fname=fname, limit=1000)
+    cs = ColorScanner(urls=load_urls(), fname=fname, limit=5)
     cs.scan()
 
     t2 = time.perf_counter()
