@@ -4,3 +4,4 @@ color_scan_testing.py
 results*.csv
 color_scanner.log
 Dockerfile
+.dockerignore
