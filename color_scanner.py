@@ -32,32 +32,34 @@ import requests
 
 
 logging.basicConfig(
-    filename='color_scanner.log',
+    filename="color_scanner.log",
     level=logging.INFO,
-    format='%(asctime)s | %(levelname)s | %(threadName)s | %(message)s'
+    format="%(asctime)s | %(levelname)s | %(threadName)s | %(message)s",
 )
 
 
 def log_info(func: callable) -> callable:
     """Decorator function for logging at info level."""
+
     def wrapper(*args, **kwargs):
-        logging.info(f'Starting {func.__name__}')
+        logging.info(f"Starting {func.__name__}")
         val = func(*args, **kwargs)
-        logging.info(f'Finished {func.__name__}')
+        logging.info(f"Finished {func.__name__}")
         return val
+
     return wrapper
 
 
-def load_urls(data_path: str='sample_data//input.txt') -> List[str]:
+def load_urls(data_path: str = "sample_data//input.txt") -> List[str]:
     """Read urls from file, return list of urls."""
-    with open(data_path, 'r') as f:
+    with open(data_path, "r") as f:
         urls = [line.strip() for line in f.readlines()]
     return urls
 
 
-def find_top_colors(img: Image, n: int=3) -> List[str]:
+def find_top_colors(img: Image, n: int = 3) -> List[str]:
     """Return top n colors from an image as hexes."""
-    colors = img.getcolors(maxcolors=256**3)  # this is the main bottleneck
+    colors = img.getcolors(maxcolors=256 ** 3)  # this is the main bottleneck
     if isinstance(colors[0][1], int):  # i.e. image has been removed
         return
     top_n = sorted(colors, reverse=True, key=lambda x: x[0])[:n]
@@ -100,7 +102,13 @@ class ColorScanner:
         write resutls to file and clear list of results
     """
 
-    def __init__(self, urls: List[str], fname: str=datetime.now().strftime("results_%Y%m%d_%H%M%S.csv"), n_colors: int=3, write_freq: int=100) -> None:
+    def __init__(
+        self,
+        urls: List[str],
+        fname: str = datetime.now().strftime("results_%Y%m%d_%H%M%S.csv"),
+        n_colors: int = 3,
+        write_freq: int = 100,
+    ) -> None:
         """
         Constructs all the necessary attributes for the ColorScanner object.
 
@@ -146,9 +154,7 @@ class ColorScanner:
                     self.write_results()
 
             color_count_thread = threading.Thread(
-                target=self.get_top_colors,
-                args=(url, img),
-                name='countThread'
+                target=self.get_top_colors, args=(url, img), name="countThread"
             )
             color_count_thread.start()  # main thread continue to next image
 
@@ -187,16 +193,16 @@ class ColorScanner:
         is cleared.
         """
         logging.info(f"Writing {len(self.results)} results to {self.fname}")
-        with open(self.fname, 'a') as csvfile:
-            writer = csv.writer(csvfile, dialect='unix')
+        with open(self.fname, "a") as csvfile:
+            writer = csv.writer(csvfile, dialect="unix")
             writer.writerows(self.results)
         self.results = []
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     t1 = time.perf_counter()
     urls = load_urls(r"D:\home\projects\top_color_challenge\sample_data\input.txt")[:10]
     cs = ColorScanner(urls)
     cs.scan()
     t2 = time.perf_counter()
-    print(f'{t2 - t1} seconds')
+    print(f"{t2 - t1} seconds")
