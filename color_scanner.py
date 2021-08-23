@@ -22,7 +22,6 @@ Writes log to module directory, color_scanner.log
 import csv
 from datetime import datetime
 import logging
-import os
 import threading
 import time
 from typing import List
