@@ -49,8 +49,8 @@ def log_info(func: callable) -> callable:
 
 
 def load_urls(data_path: str='sample_data//input.txt') -> List[str]:
-    """Load urls from file, return list of urls."""
-    with open(os.path.join(os.path.dirname(__file__), data_path), 'r') as f:
+    """Read urls from file, return list of urls."""
+    with open(data_path, 'r') as f:
         urls = [line.strip() for line in f.readlines()]
     return urls
 
@@ -100,7 +100,7 @@ class ColorScanner:
         write resutls to file and clear list of results
     """
 
-    def __init__(self, urls: List[str], fname: str, n_colors: int=3, write_freq: int=25) -> None:
+    def __init__(self, urls: List[str], fname: str=datetime.now().strftime("results_%Y%m%d_%H%M%S.csv"), n_colors: int=3, write_freq: int=100) -> None:
         """
         Constructs all the necessary attributes for the ColorScanner object.
 
@@ -109,19 +109,17 @@ class ColorScanner:
             urls : list
                 list of image urls to scan
             fname : str
-                output file name
+                output file name, default "results_%Y%m%d_%H%M%S.csv"
             n_colors : ing
-                number of top colors to find
+                number of top colors to find, default 3
             write_freq : int
-                how many images to scan before writing results to disk
-            self.results : list
-                an empyt list of results to append to
-
+                how many images to scan before writing results, default 100
         """
         self.urls = urls
         self.n_colors = n_colors
         self.fname = fname
         self.write_freq = write_freq
+
         self.results = []
 
     def scan(self) -> None:
@@ -197,8 +195,8 @@ class ColorScanner:
 
 if __name__ == '__main__':
     t1 = time.perf_counter()
-    fname = datetime.now().strftime("results_%Y%m%d_%H%M%S.csv")
-    cs = ColorScanner(urls=load_urls()[:10], fname=fname)
+    urls = load_urls(r"D:\home\projects\top_color_challenge\sample_data\input.txt")[:10]
+    cs = ColorScanner(urls)
     cs.scan()
     t2 = time.perf_counter()
     print(f'{t2 - t1} seconds')
