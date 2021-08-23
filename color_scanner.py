@@ -56,16 +56,55 @@ def load_image(url: str) -> Image:
 
 class ColorScanner:
     """
-    A color scanner object
+    An object to handle scanning image urls and writing top colors.
+
+    Attributes
+    ----------
+    urls : list
+        list of image urls to scan
+    fname : str
+        output file name
+    n_colors : ing
+        number of top colors to find
+    write_freq : int
+        how many images to scan before writing results to disk
+
+    Methods
+    -------
+    scan()
+        scan urls and write results to file, fname
+    get_top_colors(url, img)
+        get the top colors for a single image and append to results
+    write_results()
+        write resutls to file and clear list of results
     """
+
     def __init__(self, urls: List[str], fname: str, n_colors: int=3, write_freq: int=25) -> None:
+        """
+        Constructs all the necessary attributes for the ColorScanner object.
+
+        Parameters
+        ----------
+            urls : list
+                list of image urls to scan
+            fname : str
+                output file name
+            n_colors : ing
+                number of top colors to find
+            write_freq : int
+                how many images to scan before writing results to disk
+            self.results : list
+                an empyt list of results to append to
+
+        """
         self.urls = urls
         self.n_colors = n_colors
-        self.results = []
         self.fname = fname
         self.write_freq = write_freq
+        self.results = []
 
     def scan(self) -> None:
+        """Iterates throut ColorScanner.urls and finds top n colors."""
         for i, url in enumerate(self.urls):
             img = load_image(url)
 
@@ -89,6 +128,20 @@ class ColorScanner:
 
     @log_info
     def get_top_colors(self, url: str, img: Image) -> None:
+        """
+        Append url and top colors to ColorScanner.results
+
+        Parameters
+        ----------
+        url : str
+            url of associated image
+        img : PIL.Image
+            image to be scanned
+
+        Returns
+        -------
+        None
+        """
         top_colors = find_top_colors(img)
         if top_colors:  # image not removed
             self.results.append([url] + top_colors)
@@ -97,6 +150,12 @@ class ColorScanner:
 
     @log_info
     def write_results(self) -> None:
+        """
+        Write contents of Colorscanner.results to file.
+
+        After writing to file ColorScanner.fname, Colorscanner.results
+        is cleared.
+        """
         logging.info(f"Writing {len(self.results)} results to {self.fname}")
         with open(self.fname, 'a') as csvfile:
             writer = csv.writer(csvfile, dialect='unix')
