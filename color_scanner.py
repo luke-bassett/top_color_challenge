@@ -202,6 +202,7 @@ class ColorScanner:
         self.results = []
 
 
+# TODO: Remove and setup to run from terminal
 if __name__ == "__main__":
     t1 = time.perf_counter()
     urls = load_urls(r"D:\home\projects\top_color_challenge\sample_data\input.txt")[:10]
