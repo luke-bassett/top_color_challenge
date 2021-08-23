@@ -3,6 +3,7 @@ from datetime import datetime
 import logging
 import os
 import threading
+from typing import List
 import time
 
 from PIL import Image
@@ -16,8 +17,8 @@ logging.basicConfig(
 )
 
 
-def log_info(func: function) -> function:
-    """decorator function for logging at info level"""
+def log_info(func: callable) -> callable:
+    """Decorator function for logging at info level."""
     def wrapper(*args, **kwargs):
         logging.info(f'Starting {func.__name__}')
         val = func(*args, **kwargs)
@@ -26,13 +27,15 @@ def log_info(func: function) -> function:
     return wrapper
 
 
-def load_urls(data_path: str='sample_data//input.txt') -> list[str]:
+def load_urls(data_path: str='sample_data//input.txt') -> List[str]:
+    """Load urls from file, return list of urls."""
     with open(os.path.join(os.path.dirname(__file__), data_path), 'r') as f:
         urls = [line.strip() for line in f.readlines()]
     return urls
 
 
-def find_top_colors(img: Image, n: int=3) -> list[str]:
+def find_top_colors(img: Image, n: int=3) -> List[str]:
+    """Return top n colors from an image as hexes."""
     colors = img.getcolors(maxcolors=256**3)  # this is the main bottleneck
     if isinstance(colors[0][1], int):  # i.e. image has been removed
         return
@@ -41,16 +44,21 @@ def find_top_colors(img: Image, n: int=3) -> list[str]:
 
 
 def rgb_to_hex(r: int, g: int, b: int) -> str:
+    """Return hex color from rgb values."""
     return r"#{:02X}{:02X}{:02X}".format(r, g, b)
 
 
 @log_info
 def load_image(url: str) -> Image:
+    """Return image loaded from url."""
     return Image.open(requests.get(url, stream=True).raw)
 
 
-class ColorScanner():
-    def __init__(self, urls: list[str], fname: str, n_colors: int=3, write_freq: int=25) -> None:
+class ColorScanner:
+    """
+    A color scanner object
+    """
+    def __init__(self, urls: List[str], fname: str, n_colors: int=3, write_freq: int=25) -> None:
         self.urls = urls
         self.n_colors = n_colors
         self.results = []
@@ -99,7 +107,7 @@ class ColorScanner():
 if __name__ == '__main__':
     t1 = time.perf_counter()
     fname = datetime.now().strftime("results_%Y%m%d_%H%M%S.csv")
-    cs = ColorScanner(urls=load_urls()[:34], fname=fname)
+    cs = ColorScanner(urls=load_urls()[:10], fname=fname)
     cs.scan()
     t2 = time.perf_counter()
     print(f'{t2 - t1} seconds')
