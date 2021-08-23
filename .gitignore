@@ -3,3 +3,4 @@ color_scan_testing.py
 .vscode/
 results*.csv
 color_scanner.log
+Dockerfile
