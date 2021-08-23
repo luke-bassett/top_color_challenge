@@ -1,3 +1,22 @@
+"""
+Scan a list of urls of images and write a csv of urls and top colors.
+
+Classes:
+
+    ColorScanner
+
+Functions:
+
+    load_urls(str) -> List[str]
+    find_top_colors(PIL.Image, int) -> List[str]
+    rgb_to_hex(int, int, int) -> str
+    load_image(str) -> PIL.Image
+
+Decorator Functions:
+
+    log_info(callable) -> callable
+
+"""
 import csv
 from datetime import datetime
 import logging
