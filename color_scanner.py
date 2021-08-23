@@ -49,7 +49,7 @@ def log_info(func: callable) -> callable:
     return wrapper
 
 
-def load_urls(data_path: str = "sample_data//input.txt") -> List[str]:
+def load_urls(data_path: str) -> List[str]:
     """Read urls from file, return list of urls."""
     with open(data_path, "r") as f:
         urls = [line.strip() for line in f.readlines()]
@@ -84,17 +84,17 @@ class ColorScanner:
     ----------
     urls : list
         list of image urls to scan
-    fname : str
+    result_path : str
         output file name
     n_colors : ing
         number of top colors to find
-    write_freq : int
+    write_interval : int
         how many images to scan before writing results to disk
 
     Methods
     -------
     scan()
-        scan urls and write results to file, fname
+        scan urls and write results to file, result_path
     get_top_colors(url, img)
         get the top colors for a single image and append to results
     write_results()
@@ -104,9 +104,9 @@ class ColorScanner:
     def __init__(
         self,
         urls: List[str],
-        fname: str = datetime.now().strftime("results_%Y%m%d_%H%M%S.csv"),
+        result_path: str = datetime.now().strftime("results_%Y%m%d_%H%M%S.csv"),
         n_colors: int = 3,
-        write_freq: int = 100,
+        write_interval: int = 100,
     ) -> None:
         """
         Constructs all the necessary attributes for the ColorScanner object.
@@ -115,17 +115,17 @@ class ColorScanner:
         ----------
             urls : list
                 list of image urls to scan
-            fname : str
+            result_path : str
                 output file name, default "results_%Y%m%d_%H%M%S.csv"
             n_colors : ing
                 number of top colors to find, default 3
-            write_freq : int
+            write_interval : int
                 how many images to scan before writing results, default 100
         """
         self.urls = urls
         self.n_colors = n_colors
-        self.fname = fname
-        self.write_freq = write_freq
+        self.result_path = result_path
+        self.write_interval = write_interval
 
         self.results = []
 
@@ -149,13 +149,13 @@ class ColorScanner:
                 color_count_thread = None
             else:
                 color_count_thread.join()
-                if len(self.results) >= self.write_freq:
+                if len(self.results) >= self.write_interval:
                     self.write_results()
 
             color_count_thread = threading.Thread(
                 target=self.get_top_colors, args=(url, img), name="countThread"
             )
-            color_count_thread.start()  # main thread continue to next image
+            color_count_thread.start()  # main thread can continue to next image
 
         color_count_thread.join()
         if len(self.results) > 0:
@@ -164,7 +164,11 @@ class ColorScanner:
     @log_info
     def get_top_colors(self, url: str, img: Image) -> None:
         """
-        Append url and top colors to ColorScanner.results
+        Append url and top colors to ColorScanner.results as
+        [url, color, color, color]
+
+        If image is not present at url, only the url is appended to
+        results as [url, None, None, None]
 
         Parameters
         ----------
@@ -178,21 +182,21 @@ class ColorScanner:
         None
         """
         top_colors = find_top_colors(img)
-        if top_colors:  # image not removed
+        if top_colors:
             self.results.append([url] + top_colors)
-        else:
-            self.results.append([url])
+        else:  # image has been removed, no colors
+            self.results.append([url] + [None] * self.n_colors)
 
     @log_info
     def write_results(self) -> None:
         """
         Write contents of Colorscanner.results to file.
 
-        After writing to file ColorScanner.fname, Colorscanner.results
+        After writing to file ColorScanner.result_path, Colorscanner.results
         is cleared.
         """
-        logging.info(f"Writing {len(self.results)} results to {self.fname}")
-        with open(self.fname, "a") as csvfile:
+        logging.info(f"Writing {len(self.results)} results to {self.result_path}")
+        with open(self.result_path, "a") as csvfile:
             writer = csv.writer(csvfile, dialect="unix")
             writer.writerows(self.results)
         self.results = []
