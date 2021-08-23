@@ -16,14 +16,16 @@ Decorator Functions:
 
     log_info(callable) -> callable
 
+Writes log to module directory, color_scanner.log
+
 """
 import csv
 from datetime import datetime
 import logging
 import os
 import threading
-from typing import List
 import time
+from typing import List
 
 from PIL import Image
 import requests
@@ -123,7 +125,18 @@ class ColorScanner:
         self.results = []
 
     def scan(self) -> None:
-        """Iterates throut ColorScanner.urls and finds top n colors."""
+        """
+        Iterates throut ColorScanner.urls and finds top n colors.
+
+        Color counting is handled in a separate thread so that loading of
+        the next image can begin concurrently if resources are available.
+
+        Color counting takes longer than image loading. For simplicity only
+        one additional image is loaded during color counting.
+
+        Writing resutls is handled on the main thread because it is very
+        resouce light. Appending does not load the results file to memory.
+        """
         for i, url in enumerate(self.urls):
             img = load_image(url)
 
@@ -139,7 +152,7 @@ class ColorScanner:
                 args=(url, img),
                 name='countThread'
             )
-            color_count_thread.start()  # continue on to loading next image
+            color_count_thread.start()  # main thread continue to next image
 
         color_count_thread.join()
         if len(self.results) > 0:
