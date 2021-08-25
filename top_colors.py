@@ -130,7 +130,7 @@ args = parser.parse_args()
 
 logging.basicConfig(
     filename="color_scanner.log",
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s | %(levelname)s | %(threadName)s | %(message)s",
 )
 
@@ -194,7 +194,7 @@ def read_urls(urls_path: str, url_q: Queue) -> None:
         while True:
             url = urlfile.readline().strip()
             if url != "":
-                logging.info(f"add to url_q: {url}")
+                logging.debug(f"add to url_q: {url}")
                 url_q.put(url)
             else:
                 break
@@ -213,7 +213,7 @@ def process_image(url_q: Queue, result_q: Queue) -> None:
     while True:
         if not url_q.empty():
             url = url_q.get()
-            logging.info(f"processing image from url: {url}")
+            logging.debug(f"processing image from url: {url}")
             im = load_image(url)
             if not im:
                 continue
@@ -279,11 +279,14 @@ def main(
     finished_processing = False
 
     read_thread = Thread(target=read_urls, args=(urls_path, url_q))
+    logging.info('Starting read URLs thread')
     read_thread.start()
     write_thread = Thread(target=write_results, args=(result_path, result_q))
+    logging.info('Starting writing results thread.')
     write_thread.start()
 
     process_threads = []
+    logging.info(f'Starting {n_process_threads} process images thread(s).')
     for _ in range(n_process_threads):
         thread = Thread(target=process_image, args=(url_q, result_q))
         thread.start()
