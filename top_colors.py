@@ -41,6 +41,10 @@ check_valid_image
     This function checks the shape of the image to confirm that there are at
     least 3 channels. (RGB)
 
+find_eof
+    args: f: TextIO
+    returns: Int position of end of file.
+
 read_urls
     args: urls_path: str, url_q: queue.Queue
     returns: None
@@ -91,7 +95,7 @@ import csv
 import logging
 import numpy as np
 import time
-from typing import List
+from typing import List, TextIO
 from queue import Queue
 from threading import Thread
 
@@ -184,6 +188,14 @@ def check_valid_image(im: Image) -> bool:
     return (len(im_shape) == 3) and (im_shape[-1] >= 3)
 
 
+def find_eof(f: TextIO) -> int:
+    """Returns end-of-file position."""
+    f.seek(0, 2)  # end of file
+    eof = f.tell()
+    f.seek(0, 0)  # begining of file
+    return eof
+
+
 def read_urls(urls_path: str, url_q: Queue) -> None:
     """Reads urls from input file, urls_path, and puts them into url_q.
 
@@ -191,11 +203,14 @@ def read_urls(urls_path: str, url_q: Queue) -> None:
     returns: None
     """
     with open(urls_path, "r") as urlfile:
+        eof = find_eof(urlfile)
         while True:
             url = urlfile.readline().strip()
             if url != "":
                 logging.debug(f"add to url_q: {url}")
                 url_q.put(url)
+            elif urlfile.tell() != eof:  # handle blank line
+                continue
             else:
                 break
 
