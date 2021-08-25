@@ -16,7 +16,7 @@ file and another for writing to the results file.
 Functions
 ---------
 find_top_colors
-    args: img: PIL.Image, n: int
+    args: im: PIL.Image, n: int
     returns: A list of the top n most prevelent colors in hex format.
 
     Return top n colors from an image as hexes.
@@ -42,10 +42,10 @@ check_valid_image
     least 3 channels. (RGB)
 
 read_urls
-    args: urls_fname: str, url_q: queue.Queue
+    args: urls_path: str, url_q: queue.Queue
     returns: None
 
-    Reads urls from input file, urls_fname, and puts them into url_q.
+    Reads urls from input file, urls_path, and puts them into url_q.
 
 process_image
     args: url_q: queue.Queue, result_q: queue.Queue
@@ -57,18 +57,18 @@ process_image
     threads to proceed.
 
 write_results
-    args: result_q: queue.Queue, results_fname: str
+    args: result_q: queue.Queue, result_path: str
     returns: None
 
-    Gets results from result_q and appends them the the file at results_fname.
+    Gets results from result_q and appends them the the file at result_path.
     Creates file if it does not exist.
 
 main
-    args: urls_fname: str, results_fname: str, n_process_threads: int = 5,
+    args: urls_path: str, result_path: str, n_process_threads: int = 5,
           url_q_size: int = 10
     returns: None
 
-    Reads urls from urls_fname and writes results to results_fname. This
+    Reads urls from urls_path and writes results to result_path. This
     functions handles creation of threads. n_process_threads defines how many
     threads are created to retrieve images and count colors. url_q_size sets the
     max size of the url_q. Limiting the size of the url_q keeps the program from
@@ -80,8 +80,11 @@ main
 
 Example Usage
 -------------
-> python main.py -i [input path] -o [output path] -t [n threads] -q [input q size]
-
+> python top_colors.py -i [input path] -o [output path] -t [n threads] -q [input q size]
+    -i --urlfile    REQUIRED path of file containing urls, one pre linE
+    -o --resfile    REQUIRED path of file to append results to
+    -t --threads    OPTIONAL number of threads for image retrieval and color counting
+    -q --qsize      OPTIONAL number of ulrs in queue
 """
 import argparse
 import csv
@@ -92,6 +95,7 @@ from typing import List
 from queue import Queue
 from threading import Thread
 
+import PIL
 from PIL import Image
 import requests
 
@@ -131,13 +135,13 @@ logging.basicConfig(
 )
 
 
-def find_top_colors(img: Image, n: int = 3) -> List[str]:
+def find_top_colors(im: Image, n: int = 3) -> List[str]:
     """Return top n colors from an image as hexes.
 
-    args: img: PIL.Image, n: int
+    args: im: PIL.Image, n: int
     returns: A list of the top n most prevelent colors in hex format.
     """
-    colors = img.getcolors(maxcolors=256 ** 3)
+    colors = im.getcolors(maxcolors=256 ** 3)
     top_n = sorted(colors, reverse=True, key=lambda x: x[0])[:n]
     return [rgb_to_hex(x[1][0], x[1][1], x[1][2]) for x in top_n]
 
@@ -157,7 +161,12 @@ def load_image(url: str) -> Image:
     args: url: str
     returns: PIL.Image
     """
-    return Image.open(requests.get(url, stream=True).raw)
+    try:
+        return Image.open(requests.get(url, stream=True).raw)
+    except requests.exceptions.ConnectionError:
+        logging.warning(f'Failed to connect to {url}')
+    except PIL.UnidentifiedImageError:
+        logging.warning(f'No image found at {url}')
 
 
 def check_valid_image(im: Image) -> bool:
@@ -175,14 +184,13 @@ def check_valid_image(im: Image) -> bool:
     return (len(im_shape) == 3) and (im_shape[-1] >= 3)
 
 
-# Read
-def read_urls(urls_fname: str, url_q: Queue) -> None:
-    """Reads urls from input file, urls_fname, and puts them into url_q.
+def read_urls(urls_path: str, url_q: Queue) -> None:
+    """Reads urls from input file, urls_path, and puts them into url_q.
 
-    args: urls_fname: str, url_q: queue.Queue
+    args: urls_path: str, url_q: queue.Queue
     returns: None
     """
-    with open(urls_fname, "r") as urlfile:
+    with open(urls_path, "r") as urlfile:
         while True:
             url = urlfile.readline().strip()
             if url != "":
@@ -193,7 +201,6 @@ def read_urls(urls_fname: str, url_q: Queue) -> None:
                 break
 
 
-# Process
 def process_image(url_q: Queue, result_q: Queue) -> None:
     """Gets urls from url_q, and puts results into result_q.
 
@@ -209,25 +216,28 @@ def process_image(url_q: Queue, result_q: Queue) -> None:
             url = url_q.get()
             logging.info(f"processing image from url: {url}")
             im = load_image(url)
-            if check_valid_image(im):
-                res = [url] + find_top_colors(im)
-                result_q.put(res)
+            if not im:
+                continue
+            if not check_valid_image(im):
+                logging.warning(f"Image removed at {url}")
+                continue
+            res = [url] + find_top_colors(im)
+            result_q.put(res)
         elif finished_reading:
             logging.info("finished processing images")
             break
 
 
-# Write
-def write_results(results_fname: str, result_q: Queue) -> None:
-    """Gets results and appends them to results_fname.
+def write_results(result_path: str, result_q: Queue) -> None:
+    """Gets results and appends them to result_path.
 
-    args: result_q: queue.Queue, results_fname: str
+    args: result_q: queue.Queue, result_path: str
     returns: None
 
     Creates file if it does not exist.
     """
 
-    with open(results_fname, "a") as csvfile:
+    with open(result_path, "a") as csvfile:
         writer = csv.writer(csvfile, dialect="unix")
         while True:
             if not result_q.empty():
@@ -240,14 +250,14 @@ def write_results(results_fname: str, result_q: Queue) -> None:
 
 
 def main(
-    urls_fname: str,
-    results_fname: str,
+    urls_path: str,
+    result_path: str,
     n_process_threads: int = DEFAULT_THREADS,
     url_q_size: int = DEFAULT_URL_Q,
 ) -> None:
-    """Reads urls from urls_fname and writes results to results_fname.
+    """Reads urls from urls_path and writes results to result_path.
 
-    args: urls_fname: str, results_fname: str, n_process_threads: int = 5,
+    args: urls_path: str, result_path: str, n_process_threads: int = 5,
           url_q_size: int = 10
     returns: None
 
@@ -268,9 +278,9 @@ def main(
     global finished_processing
     finished_processing = False
 
-    read_thread = Thread(target=read_urls, args=(urls_fname, url_q))
+    read_thread = Thread(target=read_urls, args=(urls_path, url_q))
     read_thread.start()
-    write_thread = Thread(target=write_results, args=(results_fname, result_q))
+    write_thread = Thread(target=write_results, args=(result_path, result_q))
     write_thread.start()
 
     process_threads = []
