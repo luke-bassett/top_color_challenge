@@ -219,9 +219,11 @@ def process_image(url_q: Queue, result_q: Queue) -> None:
             if not im:
                 continue
             if not check_valid_image(im):
-                logging.warning(f"Image removed at {url}")
+                logging.warning(f"Image has been removed, {url}")
                 continue
+            logging.debug(f"Image loaded from {url}")
             res = [url] + find_top_colors(im)
+            logging.debug(f"Found top colors from {url}")
             result_q.put(res)
         elif finished_reading:
             logging.info("finished processing images")
@@ -243,7 +245,7 @@ def write_results(result_path: str, result_q: Queue) -> None:
             if not result_q.empty():
                 result = result_q.get()
                 writer.writerow(result)
-                logging.info(f"writing result: {result}")
+                logging.debug(f"writing result: {result}")
             elif finished_processing:
                 logging.info("finished writing results")
                 break
