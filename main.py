@@ -1,7 +1,6 @@
 """
 
 """
-
 import csv
 import logging
 import numpy as np
@@ -46,14 +45,14 @@ def check_valid_image(im: Image) -> bool:
 
 # Read
 def read_urls(urls_fname: str, url_q: Queue) -> None:
-    with open(urls_fname, 'r') as urlfile:
+    with open(urls_fname, "r") as urlfile:
         while True:
             url = urlfile.readline().strip()
-            if url != '':
-                logging.info(f'add to url_q: {url}')
+            if url != "":
+                logging.info(f"add to url_q: {url}")
                 url_q.put(url)
             else:
-                logging.info('finished reading urls')
+                logging.info("finished reading urls")
                 break
 
 
@@ -62,31 +61,37 @@ def process_image(url_q: Queue, result_q: Queue) -> None:
     while True:
         if not url_q.empty():
             url = url_q.get()
-            logging.info(f'processing image from url: {url}')
+            logging.info(f"processing image from url: {url}")
             im = load_image(url)
             if check_valid_image(im):
                 res = [url] + find_top_colors(im)
                 result_q.put(res)
         elif finished_reading:
-            logging.info('finished processing images')
+            logging.info("finished processing images")
             break
 
 
 # Write
 def write_results(results_fname: str, result_q: Queue) -> None:
-    with open(results_fname, 'a') as csvfile:
-        writer = csv.writer(csvfile, dialect='unix')
+    with open(results_fname, "a") as csvfile:
+        writer = csv.writer(csvfile, dialect="unix")
         while True:
             if not result_q.empty():
                 result = result_q.get()
                 writer.writerow(result)
-                logging.info(f'writing result: {result}')
+                logging.info(f"writing result: {result}")
             elif finished_processing:
-                logging.info('finished writing results')
+                logging.info("finished writing results")
                 break
 
 
-def main(urls_fname: str, results_fname: str, n_process_threads: int=5, url_q_size: int=10) -> None:
+def main(
+    urls_fname: str,
+    results_fname: str,
+    n_process_threads: int = 5,
+    url_q_size: int = 10,
+) -> None:
+
     url_q = Queue(maxsize=url_q_size)
     result_q = Queue()
 
@@ -113,11 +118,11 @@ def main(urls_fname: str, results_fname: str, n_process_threads: int=5, url_q_si
     write_thread.join()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     t1 = time.perf_counter()
 
-    if os.path.exists('result.csv'):
-        os.remove('result.csv')
+    if os.path.exists("result.csv"):
+        os.remove("result.csv")
 
-    main('sample_data/shortinput.txt', 'test.csv')
+    main("sample_data/shortinput.txt", "test.csv")
     print(f"{time.perf_counter() - t1} seconds")
