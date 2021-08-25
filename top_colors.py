@@ -197,7 +197,6 @@ def read_urls(urls_path: str, url_q: Queue) -> None:
                 logging.info(f"add to url_q: {url}")
                 url_q.put(url)
             else:
-                logging.info("finished reading urls")
                 break
 
 
@@ -226,7 +225,7 @@ def process_image(url_q: Queue, result_q: Queue) -> None:
             logging.debug(f"Found top colors from {url}")
             result_q.put(res)
         elif finished_reading:
-            logging.info("finished processing images")
+            logging.debug("thread finished processing images")
             break
 
 
@@ -247,7 +246,6 @@ def write_results(result_path: str, result_q: Queue) -> None:
                 writer.writerow(result)
                 logging.debug(f"writing result: {result}")
             elif finished_processing:
-                logging.info("finished writing results")
                 break
 
 
@@ -293,12 +291,17 @@ def main(
 
     read_thread.join()
     finished_reading = True
+    logging.info('Finished reading URLS.')
+
     [thread.join() for thread in process_threads]
     finished_processing = True
+    logging.info('All threads finished processing images.')
+
     write_thread.join()
+    logging.info('Finished writing results.')
 
 
 if __name__ == "__main__":
     t1 = time.perf_counter()
     main(args.urlfile, args.resfile, args.threads, args.qsize)
-    print(f"Finished in {time.perf_counter() - t1} seconds")
+    print(f"Finished in {round(time.perf_counter() - t1, 3)} seconds")
