@@ -1,4 +1,81 @@
-"""
+"""Finds top colors from a list of image urls.
+
+This module reads URLs from a provided file, then retrieves the images at the URLs
+and finds the top three most prevelent colors. The output is a csv with the format
+(url, color, color, color). URLs for which the image has been removed are not
+included in the results file.
+
+The program is capable of handling large input files. Separate threads are used
+for reading from the input, counting the colors, and writing to the output.
+Additionally loading the entire input or output file to memory is avoided.
+
+The number of threads used for counting colors is configurable since this is the
+most resource intensive task. A single thread is used for reading from the input
+file and another for writing to the results file.
+
+Functions
+---------
+find_top_colors
+    args: img: PIL.Image, n: int
+    returns: A list of the top n most prevelent colors in hex format.
+
+    Return top n colors from an image as hexes.
+
+rgb_to_hex
+    args: r: int, g: int, b: int
+    returns: The hex color as a string (example "#FFFFFF").
+
+    Return hex color from rgb values.
+
+load_image
+    args: url: str
+    returns: PIL.Image
+
+    Return image loaded from url, avoids saving to disk.
+
+check_valid_image
+    args: im: PIL.Image
+    returns: Bool representing whether the image has been removed.
+
+    In cases where the image has been removed a grayscale image is returned.
+    This function checks the shape of the image to confirm that there are at
+    least 3 channels. (RGB)
+
+read_urls
+    args: urls_fname: str, url_q: queue.Queue
+    returns: None
+
+    Reads urls from input file, urls_fname, and puts them into url_q.
+
+process_image
+    args: url_q: queue.Queue, result_q: queue.Queue
+    returns: None
+
+    Gets urls from url_q, retrieves image, counts colors, and puts results
+    into result_q. When multiple threads run this function, waiting for
+    respose from the url will naturally release the thread and allow for other
+    threads to proceed.
+
+write_results
+    args: result_q: queue.Queue, results_fname: str
+    returns: None
+
+    Gets results from result_q and appends them the the file at results_fname.
+    Creates file if it does not exist.
+
+main
+    args: urls_fname: str, results_fname: str, n_process_threads: int = 5,
+          url_q_size: int = 10
+    returns: None
+
+    Reads urls from urls_fname and writes results to results_fname. This
+    functions handles creation of threads. n_process_threads defines how many
+    threads are created to retrieve images and count colors. url_q_size sets the
+    max size of the url_q. Limiting the size of the url_q keeps the program from
+    reading all items in the input file before continuing.
+
+    The defaults for n_process_threads and url_q_size are candidates for furthur
+    tuning and the optimal value will depend on the machine executing the module.
 
 """
 import csv
@@ -22,29 +99,56 @@ logging.basicConfig(
 
 
 def find_top_colors(img: Image, n: int = 3) -> List[str]:
-    """Return top n colors from an image as hexes."""
+    """Return top n colors from an image as hexes.
+
+    args: img: PIL.Image, n: int
+    returns: A list of the top n most prevelent colors in hex format.
+    """
     colors = img.getcolors(maxcolors=256 ** 3)
     top_n = sorted(colors, reverse=True, key=lambda x: x[0])[:n]
     return [rgb_to_hex(x[1][0], x[1][1], x[1][2]) for x in top_n]
 
 
 def rgb_to_hex(r: int, g: int, b: int) -> str:
-    """Return hex color from rgb values."""
+    """Return hex color from rgb values.
+
+    args: r: int, g: int, b: int
+    returns: The hex color as a string (example "#FFFFFF").
+    """
     return r"#{:02X}{:02X}{:02X}".format(r, g, b)
 
 
 def load_image(url: str) -> Image:
-    """Return image loaded from url."""
+    """Return image loaded from url, avoids saving to disk.
+
+    args: url: str
+    returns: PIL.Image
+    """
     return Image.open(requests.get(url, stream=True).raw)
 
 
 def check_valid_image(im: Image) -> bool:
+    """Returns true if image is valid.
+
+    args: im: PIL.Image
+    returns: Bool representing whether the image has been removed.
+
+    In cases where the image has been removed a grayscale image is returned
+    with text stating that the target images has been removed.
+    This function checks the shape of the image to confirm that there are at
+    least 3 channels. (RGB)
+    """
     im_shape = np.array(im).shape
     return (len(im_shape) == 3) and (im_shape[-1] >= 3)
 
 
 # Read
 def read_urls(urls_fname: str, url_q: Queue) -> None:
+    """Reads urls from input file, urls_fname, and puts them into url_q.
+
+    args: urls_fname: str, url_q: queue.Queue
+    returns: None
+    """
     with open(urls_fname, "r") as urlfile:
         while True:
             url = urlfile.readline().strip()
@@ -58,6 +162,15 @@ def read_urls(urls_fname: str, url_q: Queue) -> None:
 
 # Process
 def process_image(url_q: Queue, result_q: Queue) -> None:
+    """Gets urls from url_q, and puts results into result_q.
+
+    args: url_q: queue.Queue, result_q: queue.Queue
+    returns: None
+
+    When multiple threads run this function, waiting for
+    respose from the url will naturally release the thread and allow for other
+    threads to proceed.
+    """
     while True:
         if not url_q.empty():
             url = url_q.get()
@@ -73,6 +186,14 @@ def process_image(url_q: Queue, result_q: Queue) -> None:
 
 # Write
 def write_results(results_fname: str, result_q: Queue) -> None:
+    """Gets results and appends them to results_fname.
+
+    args: result_q: queue.Queue, results_fname: str
+    returns: None
+
+    Creates file if it does not exist.
+    """
+
     with open(results_fname, "a") as csvfile:
         writer = csv.writer(csvfile, dialect="unix")
         while True:
@@ -91,6 +212,20 @@ def main(
     n_process_threads: int = 5,
     url_q_size: int = 10,
 ) -> None:
+    """Reads urls from urls_fname and writes results to results_fname.
+
+    args: urls_fname: str, results_fname: str, n_process_threads: int = 5,
+          url_q_size: int = 10
+    returns: None
+
+    This functions handles creation of threads. n_process_threads defines how
+    many threads are created to retrieve images and count colors. url_q_size sets
+    the max size of the url_q. Limiting the size of the url_q keeps the program
+    from reading all items in the input file before continuing.
+
+    The defaults for n_process_threads and url_q_size are candidates for furthur
+    tuning and the optimal value will depend on the machine executing the module.
+    """
 
     url_q = Queue(maxsize=url_q_size)
     result_q = Queue()
