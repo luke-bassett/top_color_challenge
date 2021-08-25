@@ -1,7 +1,7 @@
 """
-TODO
-- decide how to handle removed images
+
 """
+
 import csv
 import logging
 import numpy as np
@@ -58,7 +58,7 @@ def read_urls(urls_fname: str, url_q: Queue) -> None:
 
 
 # Process
-def process_image(url_q, result_q):
+def process_image(url_q: Queue, result_q: Queue) -> None:
     while True:
         if not url_q.empty():
             url = url_q.get()
@@ -73,7 +73,7 @@ def process_image(url_q, result_q):
 
 
 # Write
-def write_results(results_fname, result_q):
+def write_results(results_fname: str, result_q: Queue) -> None:
     with open(results_fname, 'a') as csvfile:
         writer = csv.writer(csvfile, dialect='unix')
         while True:
@@ -86,7 +86,7 @@ def write_results(results_fname, result_q):
                 break
 
 
-def main(urls_fname, results_fname, n_process_threads=5, url_q_size=10):
+def main(urls_fname: str, results_fname: str, n_process_threads: int=5, url_q_size: int=10) -> None:
     url_q = Queue(maxsize=url_q_size)
     result_q = Queue()
 
