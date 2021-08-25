@@ -77,6 +77,11 @@ main
     The defaults for n_process_threads and url_q_size are candidates for furthur
     tuning and the optimal value will depend on the machine executing the module.
 
+
+Example Usage
+-------------
+> python main.py -i [input path] -o [output path] -t [n threads] -q [input q size]
+
 """
 import argparse
 import csv
@@ -284,4 +289,4 @@ def main(
 if __name__ == "__main__":
     t1 = time.perf_counter()
     main(args.urlfile, args.resfile, args.threads, args.qsize)
-    print(f"{time.perf_counter() - t1} seconds")
+    print(f"Finished in {time.perf_counter() - t1} seconds")
