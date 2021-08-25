@@ -78,10 +78,10 @@ main
     tuning and the optimal value will depend on the machine executing the module.
 
 """
+import argparse
 import csv
 import logging
 import numpy as np
-import os
 import time
 from typing import List
 from queue import Queue
@@ -89,6 +89,34 @@ from threading import Thread
 
 from PIL import Image
 import requests
+
+DEFAULT_THREADS = 5
+DEFAULT_URL_Q = 10
+
+parser = argparse.ArgumentParser(
+    description="""Find top 3 most prevelent colors from images and
+                save to csv. Images are specified by a list of urls."""
+)
+parser.add_argument(
+    "-i", "--urlfile", type=str, help="File containing urls. One url per line."
+)
+parser.add_argument(
+    "-o",
+    "--resfile",
+    type=str,
+    help="Path to save results csv. Will append if already exists.",
+)
+parser.add_argument(
+    "-t",
+    "--threads",
+    type=int,
+    default=DEFAULT_THREADS,
+    help="Number of threads for image retrieval and color counting.",
+)
+parser.add_argument(
+    "-q", "--qsize", type=int, default=DEFAULT_URL_Q, help="Size of url queue."
+)
+args = parser.parse_args()
 
 
 logging.basicConfig(
@@ -209,8 +237,8 @@ def write_results(results_fname: str, result_q: Queue) -> None:
 def main(
     urls_fname: str,
     results_fname: str,
-    n_process_threads: int = 5,
-    url_q_size: int = 10,
+    n_process_threads: int = DEFAULT_THREADS,
+    url_q_size: int = DEFAULT_URL_Q,
 ) -> None:
     """Reads urls from urls_fname and writes results to results_fname.
 
@@ -255,9 +283,5 @@ def main(
 
 if __name__ == "__main__":
     t1 = time.perf_counter()
-
-    if os.path.exists("result.csv"):
-        os.remove("result.csv")
-
-    main("sample_data/shortinput.txt", "test.csv")
+    main(args.urlfile, args.resfile, args.threads, args.qsize)
     print(f"{time.perf_counter() - t1} seconds")
