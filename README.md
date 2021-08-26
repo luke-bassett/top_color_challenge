@@ -1,1 +1,1 @@
-Submission for Pex Top Color Challenge assignment.
+Submission for Top Color Challenge.
