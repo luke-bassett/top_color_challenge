@@ -166,11 +166,18 @@ def load_image(url: str) -> Image:
     returns: PIL.Image
     """
     try:
-        return Image.open(requests.get(url, stream=True).raw)
+        r = requests.get(url, stream=True).raw
     except requests.exceptions.ConnectionError:
-        logging.warning(f'Failed to connect to {url}')
+        logging.warning(f"Failed to connect to {url}")
+        return
+    except requests.exceptions.MissingSchema:
+        logging.warning(f"Invalid URL schema {url}")
+        return
+
+    try:
+        return Image.open(r)
     except PIL.UnidentifiedImageError:
-        logging.warning(f'No image found at {url}')
+        logging.waring(f"No image found at {url}")
 
 
 def check_valid_image(im: Image) -> bool:
@@ -183,6 +190,8 @@ def check_valid_image(im: Image) -> bool:
     with text stating that the target images has been removed.
     This function checks the shape of the image to confirm that there are at
     least 3 channels. (RGB)
+
+    This may not be the desired behavior and could be changed.
     """
     im_shape = np.array(im).shape
     return (len(im_shape) == 3) and (im_shape[-1] >= 3)
@@ -294,14 +303,14 @@ def main(
     finished_processing = False
 
     read_thread = Thread(target=read_urls, args=(urls_path, url_q))
-    logging.info('Starting read URLs thread')
+    logging.info("Starting read URLs thread")
     read_thread.start()
     write_thread = Thread(target=write_results, args=(result_path, result_q))
-    logging.info('Starting writing results thread.')
+    logging.info("Starting writing results thread.")
     write_thread.start()
 
     process_threads = []
-    logging.info(f'Starting {n_process_threads} process images thread(s).')
+    logging.info(f"Starting {n_process_threads} process images thread(s).")
     for _ in range(n_process_threads):
         thread = Thread(target=process_image, args=(url_q, result_q))
         thread.start()
@@ -309,14 +318,14 @@ def main(
 
     read_thread.join()
     finished_reading = True
-    logging.info('Finished reading URLS.')
+    logging.info("Finished reading URLS.")
 
     [thread.join() for thread in process_threads]
     finished_processing = True
-    logging.info('All threads finished processing images.')
+    logging.info("All threads finished processing images.")
 
     write_thread.join()
-    logging.info('Finished writing results.')
+    logging.info("Finished writing results.")
 
 
 if __name__ == "__main__":
