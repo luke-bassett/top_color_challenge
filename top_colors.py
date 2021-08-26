@@ -178,7 +178,7 @@ def load_image(url: str) -> Image:
     try:
         return Image.open(r)
     except PIL.UnidentifiedImageError:
-        logging.waring(f"No image found at {url}")
+        logging.warning(f"No image found at {url}")
 
 
 def check_valid_image(im: Image) -> bool:
