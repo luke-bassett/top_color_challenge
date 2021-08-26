@@ -16,62 +16,36 @@ file and another for writing to the results file.
 Functions
 ---------
 find_top_colors
-    args: im: PIL.Image, n: int
-    returns: A list of the top n most prevelent colors in hex format.
-
     Return top n colors from an image as hexes.
 
 rgb_to_hex
-    args: r: int, g: int, b: int
-    returns: The hex color as a string (example "#FFFFFF").
-
     Return hex color from rgb values.
 
 load_image
-    args: url: str
-    returns: PIL.Image
-
     Return image loaded from url, avoids saving to disk.
 
 check_valid_image
-    args: im: PIL.Image
-    returns: Bool representing whether the image has been removed.
-
     In cases where the image has been removed a grayscale image is returned.
     This function checks the shape of the image to confirm that there are at
     least 3 channels. (RGB)
 
 find_eof
-    args: f: TextIO
-    returns: Int position of end of file.
+    Returns EOF location
 
 read_urls
-    args: urls_path: str, url_q: queue.Queue
-    returns: None
-
     Reads urls from input file, urls_path, and puts them into url_q.
 
 process_image
-    args: url_q: queue.Queue, result_q: queue.Queue
-    returns: None
-
     Gets urls from url_q, retrieves image, counts colors, and puts results
     into result_q. When multiple threads run this function, waiting for
     respose from the url will naturally release the thread and allow for other
     threads to proceed.
 
 write_results
-    args: result_q: queue.Queue, result_path: str
-    returns: None
-
     Gets results from result_q and appends them the the file at result_path.
     Creates file if it does not exist.
 
 main
-    args: urls_path: str, result_path: str, n_process_threads: int = 5,
-          url_q_size: int = 10
-    returns: None
-
     Reads urls from urls_path and writes results to result_path. This
     functions handles creation of threads. n_process_threads defines how many
     threads are created to retrieve images and count colors. url_q_size sets the
