@@ -7,8 +7,7 @@ def test_find_top_colors():
     im = Image.open("sample_data/mclaren.jpg")
     colors = top_colors.find_top_colors(im)
     test_colors = ["#82A2BB", "#7F9FB8", "#81A1BA"]
-    assert [c in colors for c in test_colors]
-    assert [c in test_colors for c in colors]
+    assert colors == test_colors
 
 
 def test_rgb_to_hex():
@@ -49,3 +48,5 @@ def test_main():
         compare_lines = f.readlines()
 
     assert len(test_lines) == len(compare_lines)
+    assert all([line in test_lines for line in compare_lines]) is True
+    assert all([line in compare_lines for line in test_lines]) is True

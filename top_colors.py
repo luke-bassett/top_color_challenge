@@ -94,6 +94,7 @@ import argparse
 import csv
 import logging
 import numpy as np
+import random
 import time
 from typing import List, TextIO
 from queue import Queue
@@ -251,6 +252,7 @@ def process_image(url_q: Queue, result_q: Queue) -> None:
         elif finished_reading:
             logging.debug("thread finished processing images")
             break
+        time.sleep(random.random() * .001)
 
 
 def write_results(result_path: str, result_q: Queue) -> None:
@@ -271,6 +273,7 @@ def write_results(result_path: str, result_q: Queue) -> None:
                 logging.debug(f"writing result: {result}")
             elif finished_processing:
                 break
+            time.sleep(random.random() * .001)
 
 
 def main(
