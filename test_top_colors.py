@@ -5,7 +5,10 @@ import top_colors
 
 def test_find_top_colors():
     im = Image.open("sample_data/mclaren.jpg")
-    assert top_colors.find_top_colors(im) == ["#82A2BB", "#7F9FB8", "#81A1BA"]
+    colors = top_colors.find_top_colors(im)
+    test_colors = ["#82A2BB", "#7F9FB8", "#81A1BA"]
+    assert [c in colors for c in test_colors]
+    assert [c in test_colors for c in colors]
 
 
 def test_rgb_to_hex():
@@ -37,11 +40,12 @@ def test_main():
     if os.path.exists('temp.csv'):
         os.remove('temp.csv')
     top_colors.main('sample_data/test_input.txt', 'temp.csv')
+
     with open('temp.csv', 'r') as f:
         test_lines = f.readlines()
+    os.remove('temp.csv')
+
     with open('sample_data/test_results.csv', 'r') as f:
         compare_lines = f.readlines()
+
     assert len(test_lines) == len(compare_lines)
-    assert all([(line in compare_lines) for line in test_lines]) is True
-    assert all([(line in test_lines) for line in compare_lines]) is True
-    os.remove('temp.csv')
