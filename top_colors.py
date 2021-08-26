@@ -33,26 +33,26 @@ find_eof
     Returns EOF location
 
 read_urls
-    Reads urls from input file, urls_path, and puts them into url_q.
+    Reads urls from input file, url_path, and puts them into urls.
 
 process_image
-    Gets urls from url_q, retrieves image, counts colors, and puts results
-    into result_q. When multiple threads run this function, waiting for
+    Gets urls from urls, retrieves image, counts colors, and puts results
+    into results. When multiple threads run this function, waiting for
     respose from the url will naturally release the thread and allow for other
     threads to proceed.
 
 write_results
-    Gets results from result_q and appends them the the file at result_path.
+    Gets results from results and appends them the the file at result_path.
     Creates file if it does not exist.
 
 main
-    Reads urls from urls_path and writes results to result_path. This
+    Reads urls from url_path and writes results to result_path. This
     functions handles creation of threads. n_process_threads defines how many
-    threads are created to retrieve images and count colors. url_q_size sets the
-    max size of the url_q. Limiting the size of the url_q keeps the program from
+    threads are created to retrieve images and count colors. urls_size sets the
+    max size of the urls. Limiting the size of the urls keeps the program from
     reading all items in the input file before continuing.
 
-    The defaults for n_process_threads and url_q_size are candidates for furthur
+    The defaults for n_process_threads and urls_size are candidates for furthur
     tuning and the optimal value will depend on the machine executing the module.
 
 
@@ -182,29 +182,29 @@ def find_eof(f: TextIO) -> int:
     return eof
 
 
-def read_urls(urls_path: str, url_q: Queue) -> None:
-    """Reads urls from input file, urls_path, and puts them into url_q.
+def read_urls(url_path: str, urls: Queue) -> None:
+    """Reads from url_path and puts into queue urls.
 
-    args: urls_path: str, url_q: queue.Queue
+    args: url_path: str, urls: queue.Queue
     returns: None
     """
-    with open(urls_path, "r") as urlfile:
+    with open(url_path, "r") as urlfile:
         eof = find_eof(urlfile)
         while True:
             url = urlfile.readline().strip()
             if url != "":
-                logging.debug(f"add to url_q: {url}")
-                url_q.put(url)
+                logging.debug(f"add to urls: {url}")
+                urls.put(url)
             elif urlfile.tell() != eof:  # handle blank line
                 continue
             else:
                 break
 
 
-def process_image(url_q: Queue, result_q: Queue) -> None:
-    """Gets urls from url_q, and puts results into result_q.
+def process_image(urls: Queue, results: Queue) -> None:
+    """Gets urls from queue, and puts results into queue.
 
-    args: url_q: queue.Queue, result_q: queue.Queue
+    args: urls: queue.Queue, results: queue.Queue
     returns: None
 
     When multiple threads run this function, waiting for
@@ -212,8 +212,8 @@ def process_image(url_q: Queue, result_q: Queue) -> None:
     threads to proceed.
     """
     while True:
-        if not url_q.empty():
-            url = url_q.get()
+        if not urls.empty():
+            url = urls.get()
             logging.debug(f"processing image from url: {url}")
             im = load_image(url)
             if not im:
@@ -224,17 +224,17 @@ def process_image(url_q: Queue, result_q: Queue) -> None:
             logging.debug(f"Image loaded from {url}")
             res = [url] + find_top_colors(im)
             logging.debug(f"Found top colors from {url}")
-            result_q.put(res)
+            results.put(res)
         elif finished_reading:
             logging.debug("thread finished processing images")
             break
         time.sleep(random.random() * 0.001)
 
 
-def write_results(result_path: str, result_q: Queue) -> None:
+def write_results(result_path: str, results: Queue) -> None:
     """Gets results and appends them to result_path.
 
-    args: result_q: queue.Queue, result_path: str
+    args: results: queue.Queue, result_path: str
     returns: None
 
     Creates file if it does not exist.
@@ -243,8 +243,8 @@ def write_results(result_path: str, result_q: Queue) -> None:
     with open(result_path, "a") as csvfile:
         writer = csv.writer(csvfile, dialect="unix")
         while True:
-            if not result_q.empty():
-                result = result_q.get()
+            if not results.empty():
+                result = results.get()
                 writer.writerow(result)
                 logging.debug(f"writing result: {result}")
             elif finished_processing:
@@ -253,45 +253,45 @@ def write_results(result_path: str, result_q: Queue) -> None:
 
 
 def main(
-    urls_path: str,
+    url_path: str,
     result_path: str,
     n_process_threads: int = DEFAULT_THREADS,
-    url_q_size: int = DEFAULT_URL_Q,
+    urls_size: int = DEFAULT_URL_Q,
 ) -> None:
-    """Reads urls from urls_path and writes results to result_path.
+    """Reads urls from url_path and writes results to result_path.
 
-    args: urls_path: str, result_path: str, n_process_threads: int = 5,
-          url_q_size: int = 10
+    args: url_path: str, result_path: str, n_process_threads: int = 5,
+          urls_size: int = 10
     returns: None
 
     This functions handles creation of threads. n_process_threads defines how
-    many threads are created to retrieve images and count colors. url_q_size sets
-    the max size of the url_q. Limiting the size of the url_q keeps the program
+    many threads are created to retrieve images and count colors. urls_size sets
+    the max size of the urls. Limiting the size of the urls keeps the program
     from reading all items in the input file before continuing.
 
-    The defaults for n_process_threads and url_q_size are candidates for furthur
+    The defaults for n_process_threads and urls_size are candidates for furthur
     tuning and the optimal value will depend on the machine executing the module.
     """
 
-    url_q = Queue(maxsize=url_q_size)
-    result_q = Queue()
+    urls = Queue(maxsize=urls_size)
+    results = Queue()
 
     global finished_reading
     finished_reading = False
     global finished_processing
     finished_processing = False
 
-    read_thread = Thread(target=read_urls, args=(urls_path, url_q))
+    read_thread = Thread(target=read_urls, args=(url_path, urls))
     logging.info("Starting read URLs thread")
     read_thread.start()
-    write_thread = Thread(target=write_results, args=(result_path, result_q))
+    write_thread = Thread(target=write_results, args=(result_path, results))
     logging.info("Starting writing results thread.")
     write_thread.start()
 
     process_threads = []
     logging.info(f"Starting {n_process_threads} process images thread(s).")
     for _ in range(n_process_threads):
-        thread = Thread(target=process_image, args=(url_q, result_q))
+        thread = Thread(target=process_image, args=(urls, results))
         thread.start()
         process_threads.append(thread)
 
