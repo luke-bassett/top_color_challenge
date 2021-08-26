@@ -81,6 +81,7 @@ import requests
 DEFAULT_THREADS = 5
 DEFAULT_URL_Q = 10
 
+# Parser -------------------------------------------------------------------------------
 parser = argparse.ArgumentParser(
     description="""Find top 3 most prevelent colors from images and
                 save to csv. Images are specified by a list of urls."""
@@ -105,6 +106,7 @@ parser.add_argument(
     "-q", "--qsize", type=int, default=DEFAULT_URL_Q, help="Size of url queue."
 )
 args = parser.parse_args()
+# End Parser ---------------------------------------------------------------------------
 
 
 logging.basicConfig(
