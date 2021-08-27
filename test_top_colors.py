@@ -38,7 +38,7 @@ def test_find_eof():
 def test_main():
     if os.path.exists("temp.csv"):
         os.remove("temp.csv")
-    top_colors.main("sample_data/test_input.txt", "temp.csv")
+    top_colors.runner("sample_data/test_input.txt", "temp.csv")
 
     with open("temp.csv", "r") as f:
         test_lines = f.readlines()

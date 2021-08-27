@@ -48,11 +48,11 @@ write_results
 main
     Reads urls from url_path and writes results to result_path. This
     functions handles creation of threads. n_process_threads defines how many
-    threads are created to retrieve images and count colors. urls_size sets the
+    threads are created to retrieve images and count colors. url_q_size sets the
     max size of the urls. Limiting the size of the urls keeps the program from
     reading all items in the input file before continuing.
 
-    The defaults for n_process_threads and urls_size are candidates for furthur
+    The defaults for n_process_threads and url_q_size are candidates for furthur
     tuning and the optimal value will depend on the machine executing the module.
 
 
@@ -188,17 +188,21 @@ def read_urls(url_path: str, urls: Queue) -> None:
     args: url_path: str, urls: queue.Queue
     returns: None
     """
-    with open(url_path, "r") as urlfile:
-        eof = find_eof(urlfile)
-        while True:
-            url = urlfile.readline().strip()
-            if url != "":
-                logging.debug(f"add to urls: {url}")
-                urls.put(url)
-            elif urlfile.tell() != eof:  # handle blank line
-                continue
-            else:
-                break
+    try:
+        with open(url_path, "r") as urlfile:
+            eof = find_eof(urlfile)
+            while True:
+                url = urlfile.readline().strip()
+                if url != "":
+                    logging.debug(f"add to urls: {url}")
+                    urls.put(url)
+                elif urlfile.tell() != eof:  # handle blank line
+                    continue
+                else:
+                    break
+    except FileNotFoundError as err:
+        logging.critical('Input file not found.')
+        raise Exception('Input file not found') from err
 
 
 def process_image(urls: Queue, results: Queue) -> None:
@@ -239,47 +243,49 @@ def write_results(result_path: str, results: Queue) -> None:
 
     Creates file if it does not exist.
     """
+    try:
+        with open(result_path, "a") as csvfile:
+            writer = csv.writer(csvfile, dialect="unix")
+            while True:
+                if not results.empty():
+                    result = results.get()
+                    writer.writerow(result)
+                    logging.debug(f"writing result: {result}")
+                elif finished_processing:
+                    break
+                time.sleep(random.random() * 0.001)
+    except FileNotFoundError as err:
+        logging.critical('Result path not valid.')
+        raise Exception('Result path not valid') from err
 
-    with open(result_path, "a") as csvfile:
-        writer = csv.writer(csvfile, dialect="unix")
-        while True:
-            if not results.empty():
-                result = results.get()
-                writer.writerow(result)
-                logging.debug(f"writing result: {result}")
-            elif finished_processing:
-                break
-            time.sleep(random.random() * 0.001)
 
-
-def main(
+def runner(
     url_path: str,
     result_path: str,
     n_process_threads: int = DEFAULT_THREADS,
-    urls_size: int = DEFAULT_URL_Q,
+    url_q_size: int = DEFAULT_URL_Q
 ) -> None:
     """Reads urls from url_path and writes results to result_path.
 
     args: url_path: str, result_path: str, n_process_threads: int = 5,
-          urls_size: int = 10
+          url_q_size: int = 10
     returns: None
 
     This functions handles creation of threads. n_process_threads defines how
-    many threads are created to retrieve images and count colors. urls_size sets
+    many threads are created to retrieve images and count colors. url_q_size sets
     the max size of the urls. Limiting the size of the urls keeps the program
     from reading all items in the input file before continuing.
 
-    The defaults for n_process_threads and urls_size are candidates for furthur
+    The defaults for n_process_threads and url_q_size are candidates for furthur
     tuning and the optimal value will depend on the machine executing the module.
     """
-
-    urls = Queue(maxsize=urls_size)
-    results = Queue()
-
     global finished_reading
     finished_reading = False
     global finished_processing
     finished_processing = False
+
+    urls = Queue(maxsize=url_q_size)
+    results = Queue()
 
     read_thread = Thread(target=read_urls, args=(url_path, urls))
     logging.info("Starting read URLs thread")
@@ -309,5 +315,5 @@ def main(
 
 if __name__ == "__main__":
     t1 = time.perf_counter()
-    main(args.urlfile, args.resfile, args.threads, args.qsize)
+    runner(args.urlfile, args.resfile, args.threads, args.qsize)
     print(f"Finished in {round(time.perf_counter() - t1, 3)} seconds")
