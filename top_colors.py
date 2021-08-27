@@ -1,8 +1,8 @@
-"""Finds top colors per image from a list of image urls.
+"""Finds top colors per image from a list of image URLs.
 
 This module reads URLs from a provided file, then retrieves the images at the URLs
 and finds the top three most prevelent colors. The output is a csv with the format
-(url, color, color, color). URLs for which the image has been removed are not
+[url, color, color, color]. URLs for which the image has been removed are not
 included in the results file.
 
 The program is capable of handling large input files. Separate threads are used
@@ -27,7 +27,7 @@ load_image
 check_valid_image
     In cases where the image has been removed a grayscale image is returned.
     This function checks the shape of the image to confirm that there are at
-    least 3 channels. (RGB)
+    least 3 channels, i.e., not grayscale.
 
 find_eof
     Returns EOF location
@@ -37,7 +37,7 @@ read_urls
 
 process_image
     Gets urls from urls, retrieves image, counts colors, and puts results
-    into results. When multiple threads run this function, waiting for
+    into queue. When multiple threads run this function, waiting for
     respose from the url will naturally release the thread and allow for other
     threads to proceed.
 
@@ -59,10 +59,12 @@ runner
 Example Usage
 -------------
 > python top_colors.py -i [input path] -o [output path] -t [n threads] -q [input q size]
+
     -i --urlfile    REQUIRED path of file containing urls, one pre linE
     -o --resfile    REQUIRED path of file to append results to
     -t --threads    OPTIONAL number of threads for image retrieval and color counting
     -q --qsize      OPTIONAL number of ulrs in queue
+
 """
 import argparse
 import csv
@@ -163,12 +165,9 @@ def check_valid_image(im: Image) -> bool:
     args: im: PIL.Image
     returns: Bool representing whether the image has been removed.
 
-    In cases where the image has been removed a grayscale image is returned
-    with text stating that the target images has been removed.
+    In cases where the image has been removed a grayscale image is returned.
     This function checks the shape of the image to confirm that there are at
-    least 3 channels. (RGB)
-
-    This may not be the desired behavior and could be changed.
+    least 3 channels, i.e., not grayscale. (RGB)
     """
     im_shape = np.array(im).shape
     return (len(im_shape) == 3) and (im_shape[-1] >= 3)
@@ -214,8 +213,8 @@ def process_image(urls: Queue, results: Queue) -> None:
     args: urls: queue.Queue, results: queue.Queue
     returns: None
 
-    When multiple threads run this function, waiting for
-    respose from the url will naturally release the thread and allow for other
+    When multiple threads run this function, waiting for respose from
+    the url will naturally release the thread and allow for other
     threads to proceed.
     """
     while True:
@@ -244,7 +243,7 @@ def write_results(result_path: str, results: Queue) -> None:
     args: results: queue.Queue, result_path: str
     returns: None
 
-    Creates file if it does not exist.
+    Creates results file if it does not exist.
     """
     try:
         with open(result_path, "a") as csvfile:
