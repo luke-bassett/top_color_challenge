@@ -203,7 +203,9 @@ def read_urls(url_path: str, urls: Queue) -> None:
     except FileNotFoundError as err:
         logging.critical("Input file not found.")
         raise Exception("Input file not found") from err
-
+    except PermissionError as err:
+        logging.critical("Input file permission denied.")
+        raise Exception("Input file permission denied.") from err
 
 def process_image(urls: Queue, results: Queue) -> None:
     """Gets urls from queue, and puts results into queue.
@@ -257,6 +259,9 @@ def write_results(result_path: str, results: Queue) -> None:
     except FileNotFoundError as err:
         logging.critical("Result path not valid.")
         raise Exception("Result path not valid") from err
+    except PermissionError as err:
+        logging.critical("Input file permission denied.")
+        raise Exception("Input file permission denied.") from err
 
 
 def runner(
