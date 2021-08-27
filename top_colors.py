@@ -1,4 +1,4 @@
-"""Finds top colors from a list of image urls.
+"""Finds top colors per image from a list of image urls.
 
 This module reads URLs from a provided file, then retrieves the images at the URLs
 and finds the top three most prevelent colors. The output is a csv with the format
@@ -45,7 +45,7 @@ write_results
     Gets results from results and appends them the the file at result_path.
     Creates file if it does not exist.
 
-main
+runner
     Reads urls from url_path and writes results to result_path. This
     functions handles creation of threads. n_process_threads defines how many
     threads are created to retrieve images and count colors. url_q_size sets the
@@ -201,8 +201,8 @@ def read_urls(url_path: str, urls: Queue) -> None:
                 else:
                     break
     except FileNotFoundError as err:
-        logging.critical('Input file not found.')
-        raise Exception('Input file not found') from err
+        logging.critical("Input file not found.")
+        raise Exception("Input file not found") from err
 
 
 def process_image(urls: Queue, results: Queue) -> None:
@@ -255,15 +255,15 @@ def write_results(result_path: str, results: Queue) -> None:
                     break
                 time.sleep(random.random() * 0.001)
     except FileNotFoundError as err:
-        logging.critical('Result path not valid.')
-        raise Exception('Result path not valid') from err
+        logging.critical("Result path not valid.")
+        raise Exception("Result path not valid") from err
 
 
 def runner(
     url_path: str,
     result_path: str,
     n_process_threads: int = DEFAULT_THREADS,
-    url_q_size: int = DEFAULT_URL_Q
+    url_q_size: int = DEFAULT_URL_Q,
 ) -> None:
     """Reads urls from url_path and writes results to result_path.
 
