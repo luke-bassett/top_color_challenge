@@ -207,6 +207,7 @@ def read_urls(url_path: str, urls: Queue) -> None:
         logging.critical("Input file permission denied.")
         raise Exception("Input file permission denied.") from err
 
+
 def process_image(urls: Queue, results: Queue) -> None:
     """Gets urls from queue, and puts results into queue.
 
